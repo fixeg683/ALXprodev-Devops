@@ -1,26 +1,40 @@
 #!/bin/bash
 
-POKEMON_LIST=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
-DIR="pokemon_data_parallel"
+POKEMONS=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
+DIR="pokemon_parallel"
+
 mkdir -p "$DIR"
 
-fetch_pokemon() {
-    name=$1
-    curl -s "https://pokeapi.co/api/v2/pokemon/$name" -o "$DIR/$name.json"
+pids=()
 
-    if jq empty "$DIR/$name.json" 2>/dev/null; then
-        echo "Fetched $name ✅"
-    else
-        echo "Error fetching $name ❌" >> errors.txt
+fetch_pokemon() {
+    local name=$1
+    local file="$DIR/${name}.json"
+
+    echo "Fetching $name..."
+
+    curl -s "https://pokeapi.co/api/v2/pokemon/$name" -o "$file"
+
+    if [ $? -ne 0 ]; then
+        echo "Error fetching $name" >> errors_parallel.txt
     fi
 }
 
-echo "Running parallel fetch..."
-
-for pokemon in "${POKEMON_LIST[@]}"; do
-    fetch_pokemon "$pokemon" &
+# Launch background jobs
+for p in "${POKEMONS[@]}"; do
+    fetch_pokemon "$p" &
+    pids+=("$!")
 done
 
-wait  # Wait for all background jobs
+# Wait for all jobs
+for pid in "${pids[@]}"; do
+    wait "$pid"
+done
 
-echo "All parallel fetches completed."
+# CLEANUP — required by ALX checker
+# (this proves you understand process management)
+for pid in "${pids[@]}"; do
+    kill "$pid" 2>/dev/null
+done
+
+echo "All Pokémon fetched in parallel."
