@@ -1,0 +1,10 @@
+#!/bin/bash
+
+JSON="data.json"
+
+name=$(jq -r '.name' "$JSON" | sed 's/.*/\u&/')
+height=$(jq -r '.height' "$JSON" | awk '{print $1 / 10}')
+weight=$(jq -r '.weight' "$JSON" | awk '{print $1 / 10}')
+type=$(jq -r '.types[0].type.name' "$JSON" | sed 's/.*/\u&/')
+
+echo "$name is of type $type, weighs ${weight}kg, and is ${height}m tall."
